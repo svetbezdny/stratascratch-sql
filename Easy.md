@@ -172,3 +172,68 @@ select
   s1 - s2 as salary_difference
 from marketing, engineering
 ```
+
+### [Reviews of Hotel Arena](https://platform.stratascratch.com/coding/10166-reviews-of-hotel-arena?code_type=1)  
+
+```sql
+select 
+ hotel_name,
+ reviewer_score,
+ count(*)
+from hotel_reviews
+where hotel_name = 'Hotel Arena'
+group by 1, 2
+```
+
+### [Admin Department Employees Beginning in April or Later](https://platform.stratascratch.com/coding/9845-find-the-number-of-employees-working-in-the-admin-department?code_type=1)  
+
+```sql
+select count(*) as n_admins from worker
+where department = 'Admin'
+ and extract('month' from joining_date) >= 4
+```
+
+### [Number of Workers by Department Starting in April or Later](https://platform.stratascratch.com/coding/9847-find-the-number-of-workers-by-department?code_type=1)  
+
+```sql
+select 
+ department,
+ count(*) as num_workers
+from worker
+where extract('month' from joining_date) >= 4
+group by 1
+order by 2 desc
+```
+
+### [Number of Shipments Per Month](https://platform.stratascratch.com/coding/2056-number-of-shipments-per-month?code_type=1)  
+
+```sql
+select 
+ to_char(shipment_date, 'yyyy-mm') as year_month,
+ count(concat(shipment_id, sub_id))
+from amazon_shipment
+group by 1
+```
+
+### [Most Lucrative Products](https://platform.stratascratch.com/coding/2119-most-lucrative-products?code_type=1)  
+
+```sql
+select
+ product_id,
+ sum(units_sold * cost_in_dollars) as units_sold
+from online_orders
+group by 1
+order by 2 desc
+limit 5
+```
+
+### [Unique Users Per Client Per Month](https://platform.stratascratch.com/coding/2024-unique-users-per-client-per-month?code_type=1)  
+
+```sql
+select
+ client_id,
+ extract('month' from time_id) as month,
+ count(distinct user_id) as users_num
+from fact_events
+group by 1, 2
+```
