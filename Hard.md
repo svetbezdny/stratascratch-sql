@@ -132,3 +132,108 @@ having count(distinct created_at) > 1
  and count(distinct product_id) > 1
 ) foo
 ```
+
+### [City With Most Amenities](https://platform.stratascratch.com/coding/9633-city-with-most-amenities?code_type=1)  
+
+```sql
+select city from (
+ select 
+  city,
+  dense_rank() over (order by sum(array_length(string_to_array(amenities, ','), 1)) desc) r
+ from airbnb_search_details
+ group by 1
+)t where r = 1
+```
+
+### [The Most Popular Client_Id Among Users Using Video and Voice Calls](https://platform.stratascratch.com/coding/2029-the-most-popular-client_id-among-users-using-video-and-voice-calls?code_type=1)  
+
+```sql
+with t as (
+ select 
+  client_id,
+  user_id,
+  1.0 * count(case when event_type in ('video call received',
+                                       'video call sent',
+                                       'voice call received',
+                                       'voice call sent') 
+              then 1 else null end) / count(*) as ratio
+ from fact_events
+ group by 1, 2
+)
+select client_id from t 
+where ratio >= 0.5
+group by 1
+order by count(*) desc
+limit 1
+```
+
+### [Top Percentile Fraud](https://platform.stratascratch.com/coding/10303-top-percentile-fraud?code_type=1)  
+
+```sql
+with prc (state, percentile) as (
+ select state, percentile_disc(0.05) within group (order by fraud_score desc) 
+ from fraud_score 
+ group by 1
+)
+select fc.* from fraud_score fc
+join prc on fc.state = prc.state and fraud_score >= percentile
+```
+
+### [Cookbook Recipes](https://platform.stratascratch.com/coding/2089-cookbook-recipes?code_type=1)  
+
+```sql
+with pages (page) as (
+ select generate_series(
+  (select min(page_number) from cookbook_titles),
+  (select max(page_number) from cookbook_titles)
+ )
+)
+select
+ max(page) - 1 as left_page_number,
+ max(case when page % 2 = 0 then title end) as left_title,
+ max(case when page % 2 != 0 then title end)  as right_title
+from (
+ select 
+  page / 2 as pn, page, title
+ from pages p
+ left join cookbook_titles ct on p.page = ct.page_number
+)t
+group by pn
+order by pn
+```
+
+### [Retention Rate](https://platform.stratascratch.com/coding/2053-retention-rate?code_type=1)  
+
+```sql
+with y20 as (
+ select distinct 
+  account_id, 
+  100.0 * sum((max_dt > '2020-12-31')::int) / count(*) as r20
+ from (
+  select 
+   account_id, user_id,
+   date, max(date) over (partition by user_id) as max_dt
+  from sf_events
+ )t
+ where date_trunc('month', date) = '2020-12-01' 
+ group by account_id
+),
+y21 as (
+ select distinct 
+  account_id, 
+  100.0 * sum((max_dt > '2021-01-31')::int) / count(*) as r21
+ from (
+  select 
+   account_id, user_id,
+   date, max(date) over (partition by user_id) as max_dt
+  from sf_events
+ )t
+ where date_trunc('month', date) = '2021-01-01' 
+ group by account_id
+)
+select 
+ y21.account_id, 
+ r21 / r20 as retention
+from y21, y20
+where y21.account_id = y20.account_id
+```
